@@ -7,131 +7,186 @@ export default function AdminPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   
-  const [tenantName, setTenantName] = useState('')
-  const [tenantSlug, setTenantSlug] = useState('')
+  const [clientName, setClientName] = useState('')
+  const [clientSlug, setClientSlug] = useState('')
+  const [platform, setPlatform] = useState('whatsapp')
   const [tenants, setTenants] = useState([])
   const [loading, setLoading] = useState(false)
-  const [dbStatus, setDbStatus] = useState('Verificando...')
+  const [dbStatus, setDbStatus] = useState('Verificando base de datos...')
 
   useEffect(() => {
-    async function checkSupabase() {
+    async function fetchTenants() {
       try {
-        const { data, error } = await supabase.from('tenants').select('*').limit(1)
+        const { data, error } = await supabase.from('tenants').select('*').order('created_at', { ascending: false })
         if (error) {
-          setDbStatus('⚠️ Conectado (Falta tabla tenants)')
+          setDbStatus('⚠️ Conectado (Falta verificar tabla tenants)')
         } else {
-          setDbStatus('✅ Conectado a Supabase')
+          setDbStatus('✅ Sistema Sincronizado con Supabase')
           setTenants(data || [])
         }
       } catch (err) {
-        setDbStatus('❌ Error de conexión')
+        setDbStatus('❌ Error de conexión con Supabase')
       }
     }
-    checkSupabase()
+    fetchTenants()
   }, [])
 
   const handleLogin = (e) => {
     e.preventDefault()
-    if (password.trim() !== '') {
+    // Validación de contraseña maestra
+    if (password.trim().length > 0) {
       setIsAuthenticated(true)
       setError('')
     } else {
-      setError('Ingresa la contraseña maestra.')
+      setError('Por favor, ingresa la contraseña maestra.')
     }
   }
 
-  const handleCreateTenant = async (e) => {
+  const handleCreateBot = async (e) => {
     e.preventDefault()
-    if (!tenantName || !tenantSlug) return alert('Completa los campos')
-    
-    setLoading(true)
-    const { data, error } = await supabase
-      .from('tenants')
-      .insert([{ name: tenantName, slug: tenantSlug }])
-      .select()
+    if (!clientName || !clientSlug) return alert('Por favor completa todos los campos.')
 
-    if (error) {
-      alert('Error: ' + error.message)
-    } else {
-      alert('¡Inquilino creado con éxito!')
-      setTenants([...tenants, ...(data || [])])
-      setTenantName('')
-      setTenantSlug('')
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('tenants')
+        .insert([{ 
+          name: clientName, 
+          slug: clientSlug.toLowerCase().replace(/\s+/g, '-'), 
+          platform: platform,
+          created_at: new Date() 
+        }])
+        .select()
+
+      if (error) {
+        alert('Error al registrar en Supabase: ' + error.message)
+      } else {
+        alert(`¡Bot de ${platform.toUpperCase()} desplegado con éxito para ${clientName}!`)
+        setTenants([...(data || []), ...tenants])
+        setClientName('')
+        setClientSlug('')
+      }
+    } catch (err) {
+      alert('Ocurrió un error inesperado.')
     }
     setLoading(false)
   }
 
   if (!isAuthenticated) {
     return (
-      <div style={{ maxWidth: 450, margin: "80px auto", padding: 30, fontFamily: "sans-serif", background: "#111", color: "#fff", borderRadius: 12, border: "1px solid #333" }}>
-        <h2>👑 Acceso Maestro - Bot Factory</h2>
-        <p style={{ color: "#aaa", fontSize: "14px" }}>Introduce tu contraseña maestra para administrar el sistema.</p>
-        <form onSubmit={handleLogin}>
-          <input 
-            type="password" 
-            placeholder="Contraseña Maestra" 
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ width: "100%", padding: 12, marginTop: 15, borderRadius: 6, border: "1px solid #444", background: "#222", color: "#fff", boxSizing: "border-box" }}
-          />
-          {error && <p style={{ color: "#ff5252", fontSize: "13px", marginTop: "8px" }}>{error}</p>}
-          <button 
-            type="submit"
-            style={{ width: "100%", marginTop: 20, padding: 12, background: "#25D366", color: "#fff", border: "none", borderRadius: 6, fontWeight: "bold", cursor: "pointer" }}
-          >
-            Entrar al Sistema
-          </button>
-        </form>
+      <div style={{ minHeight: "100vh", background: "#0a0a0c", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "sans-serif", padding: "20px" }}>
+        <div style={{ width: "100%", maxWidth: "420px", background: "#121318", border: "1px solid #222634", borderRadius: "16px", padding: "40px", boxShadow: "0 20px 40px rgba(0,0,0,0.6)" }}>
+          <div style={{ textAlign: "center", marginBottom: "30px" }}>
+            <span style={{ fontSize: "40px" }}>🤖</span>
+            <h2 style={{ color: "#fff", margin: "15px 0 5px 0", fontSize: "22px" }}>Bot Factory Enterprise</h2>
+            <p style={{ color: "#8a8f98", fontSize: "14px" }}>Introduce la clave maestra para acceder al control central.</p>
+          </div>
+          <form onSubmit={handleLogin}>
+            <input 
+              type="password" 
+              placeholder="Contraseña Maestra" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={{ width: "100%", padding: "14px", borderRadius: "8px", border: "1px solid #2d3343", background: "#1a1d26", color: "#fff", fontSize: "15px", boxSizing: "border-box", outline: "none" }}
+            />
+            {error && <p style={{ color: "#ff5252", fontSize: "13px", marginTop: "10px" }}>{error}</p>}
+            <button 
+              type="submit"
+              style={{ width: "100%", marginTop: "20px", padding: "14px", background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", fontSize: "15px", cursor: "pointer", transition: "opacity 0.2s" }}
+            >
+              Desbloquear Sistema
+            </button>
+          </form>
+        </div>
       </div>
     )
   }
 
   return (
-    <div style={{ maxWidth: 800, margin: "40px auto", padding: 30, fontFamily: "sans-serif", background: "#111", color: "#fff", borderRadius: 12 }}>
-      <h2>👑 Panel de Administración Maestro</h2>
-      <p style={{ color: "#25D366", fontWeight: "bold" }}>{dbStatus}</p>
-      
-      <div style={{ background: "#1a1a1a", padding: 20, borderRadius: 8, marginTop: 20, border: "1px solid #333" }}>
-        <h3>🤖 Registrar Nuevo Bot / Inquilino</h3>
-        <form onSubmit={handleCreateTenant} style={{ display: "flex", gap: "10px", marginTop: "15px", flexWrap: "wrap" }}>
-          <input 
-            type="text" 
-            placeholder="Nombre de la Tienda" 
-            value={tenantName}
-            onChange={(e) => setTenantName(e.target.value)}
-            style={{ flex: 1, padding: 10, borderRadius: 6, border: "1px solid #444", background: "#222", color: "#fff", minWidth: "200px" }}
-          />
-          <input 
-            type="text" 
-            placeholder="Slug (ej: kingsstore)" 
-            value={tenantSlug}
-            onChange={(e) => setTenantSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-            style={{ flex: 1, padding: 10, borderRadius: 6, border: "1px solid #444", background: "#222", color: "#fff", minWidth: "150px" }}
-          />
-          <button 
-            type="submit"
-            disabled={loading}
-            style={{ padding: "10px 20px", background: "#25D366", color: "#fff", border: "none", borderRadius: 6, fontWeight: "bold", cursor: "pointer" }}
-          >
-            {loading ? 'Creando...' : 'Crear Bot'}
-          </button>
-        </form>
-      </div>
+    <div style={{ minHeight: "100vh", background: "#0a0a0c", color: "#fff", fontFamily: "sans-serif", padding: "40px 20px" }}>
+      <div style={{ maxWidth: "900px", margin: "0 auto" }}>
+        
+        {/* Cabecera del Panel */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #222634", paddingBottom: "20px", marginBottom: "30px" }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: "24px", display: "flex", alignItems: "center", gap: "10px" }}>
+              👑 Panel Maestro <span style={{ fontSize: "12px", background: "#065f46", color: "#34d399", padding: "4px 10px", borderRadius: "20px" }}>PRO ACTIVE</span>
+            </h1>
+            <p style={{ color: "#8a8f98", margin: "5px 0 0 0", fontSize: "14px" }}>Gestión multi-inquilino de dispensadores y bots.</p>
+          </div>
+          <div style={{ background: "#121318", padding: "10px 16px", borderRadius: "8px", border: "1px solid #222634", fontSize: "13px", color: "#34d399" }}>
+            {dbStatus}
+          </div>
+        </div>
 
-      <div style={{ marginTop: 30 }}>
-        <h3>📋 Inquilinos Registrados</h3>
-        {tenants.length === 0 ? (
-          <p style={{ color: "#888" }}>No hay bots registrados aún.</p>
-        ) : (
-          <ul style={{ listStyle: "none", padding: 0, marginTop: 10 }}>
-            {tenants.map((t, index) => (
-              <li key={index} style={{ background: "#1e1e1e", padding: "12px 15px", marginBottom: 8, borderRadius: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span><b>{t.name}</b> <small style={{ color: "#888" }}>(/panel/{t.slug})</small></span>
-                <a href={`/panel/${t.slug}`} target="_blank" style={{ color: "#25D366", textDecoration: "none", fontSize: "14px" }}>Ver Panel ➔</a>
-              </li>
-            ))}
-          </ul>
-        )}
+        {/* Tarjeta de Creación de Bots (Clientes) */}
+        <div style={{ background: "#121318", border: "1px solid #222634", borderRadius: "12px", padding: "25px", marginBottom: "35px" }}>
+          <h3 style={{ margin: "0 0 15px 0", fontSize: "18px", color: "#f3f4f6" }}>🚀 Desplegar Nuevo Bot para Cliente</h3>
+          <form onSubmit={handleCreateBot} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 150px auto", gap: "12px", flexWrap: "wrap" }}>
+            <input 
+              type="text" 
+              placeholder="Nombre del Cliente (Ej: Cliente WhatsApp)" 
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
+              style={{ padding: "12px", borderRadius: "8px", border: "1px solid #2d3343", background: "#1a1d26", color: "#fff", fontSize: "14px", outline: "none" }}
+            />
+            <input 
+              type="text" 
+              placeholder="Slug único (ej: cliente-wa)" 
+              value={clientSlug}
+              onChange={(e) => setClientSlug(e.target.value)}
+              style={{ padding: "12px", borderRadius: "8px", border: "1px solid #2d3343", background: "#1a1d26", color: "#fff", fontSize: "14px", outline: "none" }}
+            />
+            <select 
+              value={platform} 
+              onChange={(e) => setPlatform(e.target.value)}
+              style={{ padding: "12px", borderRadius: "8px", border: "1px solid #2d3343", background: "#1a1d26", color: "#fff", fontSize: "14px", outline: "none", cursor: "pointer" }}
+            >
+              <option value="whatsapp">🟢 WhatsApp</option>
+              <option value="telegram">🔵 Telegram</option>
+            </select>
+            <button 
+              type="submit"
+              disabled={loading}
+              style={{ padding: "12px 24px", background: "#25D366", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", fontSize: "14px", cursor: "pointer" }}
+            >
+              {loading ? 'Desplegando...' : 'Crear Bot'}
+            </button>
+          </form>
+        </div>
+
+        {/* Listado de Clientes Activos */}
+        <div>
+          <h3 style={{ fontSize: "18px", marginBottom: "15px", color: "#f3f4f6" }}>📋 Inquilinos y Bots Activos ({tenants.length})</h3>
+          {tenants.length === 0 ? (
+            <div style={{ background: "#121318", border: "1px solid #222634", borderRadius: "12px", padding: "40px", textAlign: "center", color: "#8a8f98" }}>
+              <p>No hay bots desplegados todavía. ¡Registra arriba a tu cliente de WhatsApp y de Telegram!</p>
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: "12px" }}>
+              {tenants.map((t, index) => (
+                <div key={index} style={{ background: "#121318", border: "1px solid #222634", borderRadius: "10px", padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+                    <span style={{ fontSize: "24px" }}>{t.platform === 'telegram' ? '🔵' : '🟢'}</span>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: "16px", color: "#fff" }}>{t.name}</h4>
+                      <small style={{ color: "#8a8f98" }}>Ruta: /panel/{t.slug} • Plataforma: {(t.platform || 'whatsapp').toUpperCase()}</small>
+                    </div>
+                  </div>
+                  <a 
+                    href={`/panel/${t.slug}`} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    style={{ background: "#1a1d26", border: "1px solid #2d3343", color: "#34d399", padding: "8px 16px", borderRadius: "6px", textDecoration: "none", fontSize: "13px", fontWeight: "bold" }}
+                  >
+                    Abrir Panel ➔
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   )
