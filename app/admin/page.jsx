@@ -1,6 +1,11 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { supabase } from '../../lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+)
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -33,7 +38,6 @@ export default function AdminPage() {
 
   const handleLogin = (e) => {
     e.preventDefault()
-    // Validación de contraseña maestra
     if (password.trim().length > 0) {
       setIsAuthenticated(true)
       setError('')
@@ -92,7 +96,7 @@ export default function AdminPage() {
             {error && <p style={{ color: "#ff5252", fontSize: "13px", marginTop: "10px" }}>{error}</p>}
             <button 
               type="submit"
-              style={{ width: "100%", marginTop: "20px", padding: "14px", background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", fontSize: "15px", cursor: "pointer", transition: "opacity 0.2s" }}
+              style={{ width: "100%", marginTop: "20px", padding: "14px", background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", fontSize: "15px", cursor: "pointer" }}
             >
               Desbloquear Sistema
             </button>
@@ -106,7 +110,6 @@ export default function AdminPage() {
     <div style={{ minHeight: "100vh", background: "#0a0a0c", color: "#fff", fontFamily: "sans-serif", padding: "40px 20px" }}>
       <div style={{ maxWidth: "900px", margin: "0 auto" }}>
         
-        {/* Cabecera del Panel */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #222634", paddingBottom: "20px", marginBottom: "30px" }}>
           <div>
             <h1 style={{ margin: 0, fontSize: "24px", display: "flex", alignItems: "center", gap: "10px" }}>
@@ -119,7 +122,6 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Tarjeta de Creación de Bots (Clientes) */}
         <div style={{ background: "#121318", border: "1px solid #222634", borderRadius: "12px", padding: "25px", marginBottom: "35px" }}>
           <h3 style={{ margin: "0 0 15px 0", fontSize: "18px", color: "#f3f4f6" }}>🚀 Desplegar Nuevo Bot para Cliente</h3>
           <form onSubmit={handleCreateBot} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 150px auto", gap: "12px", flexWrap: "wrap" }}>
@@ -155,7 +157,6 @@ export default function AdminPage() {
           </form>
         </div>
 
-        {/* Listado de Clientes Activos */}
         <div>
           <h3 style={{ fontSize: "18px", marginBottom: "15px", color: "#f3f4f6" }}>📋 Inquilinos y Bots Activos ({tenants.length})</h3>
           {tenants.length === 0 ? (
