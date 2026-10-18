@@ -14,17 +14,27 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false)
   const [dbStatus, setDbStatus] = useState('Verificando base de datos...')
 
-  // Inicialización segura dentro del cliente para evitar errores de Build
+  // Create the client only when real public Supabase configuration is present.
+  // This prevents Next.js prerender/build from failing when env vars are missing.
   const getSupabase = () => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
-    return createClient(url, key)
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    if (!url || !key) return null
+    try {
+      return createClient(url, key)
+    } catch {
+      return null
+    }
   }
 
   useEffect(() => {
     async function fetchTenants() {
       try {
         const supabase = getSupabase()
+        if (!supabase) {
+          setDbStatus('⚠️ Configura NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY en Vercel')
+          return
+        }
         const { data, error } = await supabase.from('tenants').select('*').order('created_at', { ascending: false })
         if (error) {
           setDbStatus('⚠️ Conectado (Falta verificar tabla tenants)')
@@ -56,6 +66,12 @@ export default function AdminPage() {
     setLoading(true)
     try {
       const supabase = getSupabase()
+      if (!supabase) {
+        setDbStatus('⚠️ Falta configuración de Supabase en Vercel')
+        alert('Falta configurar las variables públicas de Supabase en Vercel.')
+        setLoading(false)
+        return
+      }
       const newTenant = { 
         name: clientName, 
         slug: clientSlug.toLowerCase().replace(/\s+/g, '-'), 
